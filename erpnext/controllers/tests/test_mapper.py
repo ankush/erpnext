@@ -22,7 +22,7 @@ class TestMapper(unittest.TestCase):
 
 		# Map source docs to target with corresponding mapper method
 		method = "erpnext.selling.doctype.quotation.quotation.make_sales_order"
-		updated_so = mapper.map_docs(method, json.dumps([qtn1.name, qtn2.name]), so)
+		updated_so = mapper.map_docs(method, frappe.as_json([qtn1.name, qtn2.name]), so)
 
 		# Assert that all inserted items are present in updated sales order
 		src_items = item_list_1 + item_list_2 + item_list_3

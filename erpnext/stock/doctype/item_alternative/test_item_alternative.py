@@ -44,7 +44,7 @@ class TestItemAlternative(ERPNextTestCase):
 					{"item_code": "Test Finished Goods - A", "rm_item_code": "Test FG A RW 2", "item_name":"Test FG A RW 2",
 					"qty":5, "warehouse":"_Test Warehouse - _TC", "rate":2000, "amount":10000, "stock_uom":"Nos"}]
 
-		rm_item_string = json.dumps(rm_item)
+		rm_item_string = frappe.as_json(rm_item)
 		reserved_qty_for_sub_contract = frappe.db.get_value('Bin',
 			{'item_code': 'Test FG A RW 1', 'warehouse': '_Test Warehouse - _TC'}, 'reserved_qty_for_sub_contract')
 

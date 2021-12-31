@@ -238,7 +238,7 @@ def update_item_wise_tax_detail(consolidate_tax_row, tax_row):
 				item_code: [tax_data[0], tax_data[1]]
 			})
 
-	consolidate_tax_row.item_wise_tax_detail = json.dumps(consolidated_tax_detail, separators=(',', ':'))
+	consolidate_tax_row.item_wise_tax_detail = frappe.as_json(consolidated_tax_detail, indent=None)
 
 def get_all_unconsolidated_invoices():
 	filters = {

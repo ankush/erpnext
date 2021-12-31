@@ -40,7 +40,7 @@ class TallyMigration(Document):
 	def validate(self):
 		failed_import_log = json.loads(self.failed_import_log)
 		sorted_failed_import_log = sorted(failed_import_log, key=lambda row: row["doc"]["creation"])
-		self.failed_import_log = json.dumps(sorted_failed_import_log)
+		self.failed_import_log = frappe.as_json(sorted_failed_import_log)
 
 	def autoname(self):
 		if not self.name:
@@ -78,7 +78,7 @@ class TallyMigration(Document):
 				"file_name":  key + ".json",
 				"attached_to_doctype": self.doctype,
 				"attached_to_name": self.name,
-				"content": json.dumps(value),
+				"content": frappe.as_json(value),
 				"is_private": True
 			})
 			try:
@@ -621,7 +621,7 @@ class TallyMigration(Document):
 					"doc": doc,
 					"exc": traceback.format_exc()
 				})
-				self.failed_import_log = json.dumps(failed_import_log, separators=(',', ':'))
+				self.failed_import_log = frappe.as_json(failed_import_log)
 				self.save()
 				frappe.db.commit()
 

@@ -360,7 +360,7 @@ class TestSalesOrder(ERPNextTestCase):
 		reserved_qty_for_second_item = get_reserved_qty("_Test Item 2")
 
 		first_item_of_so = so.get("items")[0]
-		trans_item = json.dumps([
+		trans_item = frappe.as_json([
 			{'item_code' : first_item_of_so.item_code, 'rate' : first_item_of_so.rate, \
 				'qty' : first_item_of_so.qty, 'docname': first_item_of_so.name},
 			{'item_code' : '_Test Item 2', 'rate' : 200, 'qty' : 7}
@@ -399,7 +399,7 @@ class TestSalesOrder(ERPNextTestCase):
 		reserved_qty_for_second_item = get_reserved_qty("_Test Item 2")
 
 		# add an item so as to try removing items
-		trans_item = json.dumps([
+		trans_item = frappe.as_json([
 			{"item_code": '_Test Item', "qty": 5, "rate":1000, "docname": so.get("items")[0].name},
 			{"item_code": '_Test Item 2', "qty": 2, "rate":500}
 		])
@@ -411,7 +411,7 @@ class TestSalesOrder(ERPNextTestCase):
 		self.assertEqual(get_reserved_qty('_Test Item 2'), reserved_qty_for_second_item + 2)
 
 		# check if delivered items can be removed
-		trans_item = json.dumps([{
+		trans_item = frappe.as_json([{
 			"item_code": '_Test Item 2',
 			"qty": 2,
 			"rate":500,
@@ -420,7 +420,7 @@ class TestSalesOrder(ERPNextTestCase):
 		self.assertRaises(frappe.ValidationError, update_child_qty_rate, 'Sales Order', trans_item, so.name)
 
 		#remove last added item
-		trans_item = json.dumps([{
+		trans_item = frappe.as_json([{
 			"item_code": '_Test Item',
 			"qty": 5,
 			"rate":1000,
@@ -444,7 +444,7 @@ class TestSalesOrder(ERPNextTestCase):
 
 		existing_reserved_qty = get_reserved_qty()
 
-		trans_item = json.dumps([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 7, 'docname': so.items[0].name}])
+		trans_item = frappe.as_json([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 7, 'docname': so.items[0].name}])
 		update_child_qty_rate('Sales Order', trans_item, so.name)
 
 		so.reload()
@@ -455,7 +455,7 @@ class TestSalesOrder(ERPNextTestCase):
 
 		self.assertEqual(get_reserved_qty(), existing_reserved_qty + 3)
 
-		trans_item = json.dumps([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 2, 'docname': so.items[0].name}])
+		trans_item = frappe.as_json([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 2, 'docname': so.items[0].name}])
 		self.assertRaises(frappe.ValidationError, update_child_qty_rate,'Sales Order', trans_item, so.name)
 
 	def test_update_child_with_precision(self):
@@ -467,7 +467,7 @@ class TestSalesOrder(ERPNextTestCase):
 		make_property_setter("Sales Order Item", "rate", "precision", 7, "Currency")
 		so = make_sales_order(item_code= "_Test Item", qty=4, rate=200.34664)
 
-		trans_item = json.dumps([{'item_code' : '_Test Item', 'rate' : 200.34669, 'qty' : 4, 'docname': so.items[0].name}])
+		trans_item = frappe.as_json([{'item_code' : '_Test Item', 'rate' : 200.34669, 'qty' : 4, 'docname': so.items[0].name}])
 		update_child_qty_rate('Sales Order', trans_item, so.name)
 
 		so.reload()
@@ -481,11 +481,11 @@ class TestSalesOrder(ERPNextTestCase):
 		frappe.set_user(test_user.name)
 
 		# update qty
-		trans_item = json.dumps([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 7, 'docname': so.items[0].name}])
+		trans_item = frappe.as_json([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 7, 'docname': so.items[0].name}])
 		self.assertRaises(frappe.ValidationError, update_child_qty_rate,'Sales Order', trans_item, so.name)
 
 		# add new item
-		trans_item = json.dumps([{'item_code' : '_Test Item', 'rate' : 100, 'qty' : 2}])
+		trans_item = frappe.as_json([{'item_code' : '_Test Item', 'rate' : 100, 'qty' : 2}])
 		self.assertRaises(frappe.ValidationError, update_child_qty_rate,'Sales Order', trans_item, so.name)
 
 	def test_update_child_qty_rate_with_workflow(self):
@@ -501,7 +501,7 @@ class TestSalesOrder(ERPNextTestCase):
 		frappe.set_user(user)
 
 		# user shouldn't be able to edit since grand_total will become > 200 if qty is doubled
-		trans_item = json.dumps([{'item_code' : '_Test Item', 'rate' : 150, 'qty' : 2, 'docname': so.items[0].name}])
+		trans_item = frappe.as_json([{'item_code' : '_Test Item', 'rate' : 150, 'qty' : 2, 'docname': so.items[0].name}])
 		self.assertRaises(frappe.ValidationError, update_child_qty_rate, 'Sales Order', trans_item, so.name)
 
 		frappe.set_user("Administrator")
@@ -538,7 +538,7 @@ class TestSalesOrder(ERPNextTestCase):
 		# get reserved qty of packed item
 		existing_reserved_qty = get_reserved_qty("_Packed Item")
 
-		added_item = json.dumps([{"item_code" : "_Product Bundle Item", "rate" : 200, 'qty' : 2}])
+		added_item = frappe.as_json([{"item_code" : "_Product Bundle Item", "rate" : 200, 'qty' : 2}])
 		update_child_qty_rate('Sales Order', added_item, so.name)
 
 		so.reload()
@@ -548,7 +548,7 @@ class TestSalesOrder(ERPNextTestCase):
 		self.assertEqual(get_reserved_qty("_Packed Item"), existing_reserved_qty + 4)
 
 		# test uom and conversion factor change
-		update_uom_conv_factor = json.dumps([{
+		update_uom_conv_factor = frappe.as_json([{
 			'item_code': so.get("items")[0].item_code,
 			'rate': so.get("items")[0].rate,
 			'qty': so.get("items")[0].qty,
@@ -630,7 +630,7 @@ class TestSalesOrder(ERPNextTestCase):
 		old_stock_settings_value = frappe.db.get_single_value("Stock Settings", "default_warehouse")
 		frappe.db.set_value("Stock Settings", None, "default_warehouse", "_Test Warehouse - _TC")
 
-		items = json.dumps([
+		items = frappe.as_json([
 			{'item_code' : item, 'rate' : 100, 'qty' : 1, 'docname': so.items[0].name},
 			{'item_code' : item, 'rate' : 200, 'qty' : 1}, # added item whose tax account head already exists in PO
 			{'item_code' : new_item_with_tax.name, 'rate' : 100, 'qty' : 1} # added item whose tax account head  is missing in PO
@@ -1046,7 +1046,7 @@ class TestSalesOrder(ERPNextTestCase):
 				"description": item.get("description")
 			})
 			so_item_name[item.get("sales_order_item")]= item.get("pending_qty")
-		make_work_orders(json.dumps({"items":po_items}), so.name, so.company)
+		make_work_orders(frappe.as_json({"items":po_items}), so.name, so.company)
 
 		# Check if Work Orders were raised
 		for item in so_item_name:

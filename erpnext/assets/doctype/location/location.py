@@ -56,7 +56,7 @@ class Location(NestedSet):
 		location = json.loads(self.location)
 		location['features'] = features
 
-		self.db_set('location', json.dumps(location), commit=True)
+		self.db_set('location', frappe.as_json(location), commit=True)
 
 	def update_ancestor_location_features(self):
 		self_features = set(self.add_child_property())
@@ -103,7 +103,7 @@ class Location(NestedSet):
 
 		for index, feature in enumerate(filter_features):
 			feature['properties'].update({'child_feature': True, 'feature_of': self.location_name})
-			filter_features[index] = json.dumps(filter_features[index])
+			filter_features[index] = frappe.as_json(filter_features[index])
 
 		return filter_features
 
@@ -113,9 +113,9 @@ class Location(NestedSet):
 
 		for feature in features:
 			if feature.get('properties').get('feature_of') == child_feature:
-				child_features.extend([json.dumps(feature)])
+				child_features.extend([frappe.as_json(feature)])
 			else:
-				non_child_features.extend([json.dumps(feature)])
+				non_child_features.extend([frappe.as_json(feature)])
 
 		return child_features, non_child_features
 

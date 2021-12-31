@@ -35,7 +35,7 @@ class BankStatementImport(DataImport):
 			for i in bank.bank_transaction_mapping:
 				column_to_field_map[i.file_field] = i.bank_transaction_field
 			template_options_dict["column_to_field_map"] = column_to_field_map
-			self.template_options = json.dumps(template_options_dict)
+			self.template_options = frappe.as_json(template_options_dict)
 
 			self.template_warnings = ""
 
@@ -48,7 +48,7 @@ class BankStatementImport(DataImport):
 			self.import_file, self.google_sheets_url
 		)
 
-		if 'Bank Account' not in json.dumps(preview['columns']):
+		if 'Bank Account' not in frappe.as_json(preview['columns']):
 			frappe.throw(_("Please add the Bank Account column"))
 
 		from frappe.core.page.background_jobs.background_jobs import get_info

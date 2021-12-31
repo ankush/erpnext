@@ -108,7 +108,7 @@ class TestPurchaseOrder(unittest.TestCase):
 		existing_requested_qty = get_requested_qty() # 0
 
 		# decrease ordered qty by 3 (10 -> 7) and add item
-		trans_item = json.dumps([
+		trans_item = frappe.as_json([
 			{
 				'item_code': first_item_of_po.item_code,
 				'rate': first_item_of_po.rate,
@@ -127,7 +127,7 @@ class TestPurchaseOrder(unittest.TestCase):
 		self.assertEqual(get_ordered_qty(), existing_ordered_qty - 3) # 7
 
 		# delete first item linked to Material Request
-		trans_item = json.dumps([
+		trans_item = frappe.as_json([
 			{'item_code' : '_Test Item 2', 'rate' : 200, 'qty' : 2}
 		])
 		update_child_qty_rate('Purchase Order', trans_item, po.name)
@@ -155,7 +155,7 @@ class TestPurchaseOrder(unittest.TestCase):
 		existing_ordered_qty = get_ordered_qty()
 		existing_requested_qty = get_requested_qty()
 
-		trans_item = json.dumps([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 7, 'docname': po.items[0].name}])
+		trans_item = frappe.as_json([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 7, 'docname': po.items[0].name}])
 		update_child_qty_rate('Purchase Order', trans_item, po.name)
 
 		mr.reload()
@@ -180,7 +180,7 @@ class TestPurchaseOrder(unittest.TestCase):
 		existing_ordered_qty = get_ordered_qty()
 		first_item_of_po = po.get("items")[0]
 
-		trans_item = json.dumps([
+		trans_item = frappe.as_json([
 			{
 				'item_code': first_item_of_po.item_code,
 				'rate': first_item_of_po.rate,
@@ -208,7 +208,7 @@ class TestPurchaseOrder(unittest.TestCase):
 		first_item_of_po = po.get("items")[0]
 		existing_ordered_qty = get_ordered_qty()
 		# add an item
-		trans_item = json.dumps([
+		trans_item = frappe.as_json([
 			{
 				'item_code': first_item_of_po.item_code,
 				'rate': first_item_of_po.rate,
@@ -224,11 +224,11 @@ class TestPurchaseOrder(unittest.TestCase):
 		self.assertEqual(get_ordered_qty(), existing_ordered_qty + 7)
 
 		# check if can remove received item
-		trans_item = json.dumps([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 7, 'docname': po.get("items")[1].name}])
+		trans_item = frappe.as_json([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 7, 'docname': po.get("items")[1].name}])
 		self.assertRaises(frappe.ValidationError, update_child_qty_rate, 'Purchase Order', trans_item, po.name)
 
 		first_item_of_po = po.get("items")[0]
-		trans_item = json.dumps([
+		trans_item = frappe.as_json([
 			{
 				'item_code': first_item_of_po.item_code,
 				'rate': first_item_of_po.rate,
@@ -254,11 +254,11 @@ class TestPurchaseOrder(unittest.TestCase):
 		frappe.set_user(user)
 
 		# update qty
-		trans_item = json.dumps([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 7, 'docname': po.items[0].name}])
+		trans_item = frappe.as_json([{'item_code' : '_Test Item', 'rate' : 200, 'qty' : 7, 'docname': po.items[0].name}])
 		self.assertRaises(frappe.ValidationError, update_child_qty_rate,'Purchase Order', trans_item, po.name)
 
 		# add new item
-		trans_item = json.dumps([{'item_code' : '_Test Item', 'rate' : 100, 'qty' : 2}])
+		trans_item = frappe.as_json([{'item_code' : '_Test Item', 'rate' : 100, 'qty' : 2}])
 		self.assertRaises(frappe.ValidationError, update_child_qty_rate,'Purchase Order', trans_item, po.name)
 		frappe.set_user("Administrator")
 
@@ -327,7 +327,7 @@ class TestPurchaseOrder(unittest.TestCase):
 		self.assertEqual(po.taxes[0].tax_amount, 50)
 		self.assertEqual(po.taxes[0].total, 550)
 
-		items = json.dumps([
+		items = frappe.as_json([
 			{'item_code' : item, 'rate' : 500, 'qty' : 1, 'docname': po.items[0].name},
 			{'item_code' : item, 'rate' : 100, 'qty' : 1}, # added item whose tax account head already exists in PO
 			{'item_code' : new_item_with_tax.name, 'rate' : 100, 'qty' : 1} # added item whose tax account head  is missing in PO
@@ -353,7 +353,7 @@ class TestPurchaseOrder(unittest.TestCase):
 		po = create_purchase_order(item_code="_Test FG Item", is_subcontracted="Yes")
 		total_reqd_qty = sum([d.get("required_qty") for d in po.as_dict().get("supplied_items")])
 
-		trans_item = json.dumps([{
+		trans_item = frappe.as_json([{
 			'item_code': po.get("items")[0].item_code,
 			'rate': po.get("items")[0].rate,
 			'qty': po.get("items")[0].qty,
@@ -697,7 +697,7 @@ class TestPurchaseOrder(unittest.TestCase):
 		# Create stock transfer
 		rm_item = [{"item_code":"_Test FG Item","rm_item_code":"_Test Item","item_name":"_Test Item",
 					"qty":6,"warehouse":"_Test Warehouse - _TC","rate":100,"amount":600,"stock_uom":"Nos"}]
-		rm_item_string = json.dumps(rm_item)
+		rm_item_string = frappe.as_json(rm_item)
 		se = frappe.get_doc(make_subcontract_transfer_entry(po.name, rm_item_string))
 		se.to_warehouse = "_Test Warehouse 1 - _TC"
 		se.save()
@@ -842,7 +842,7 @@ class TestPurchaseOrder(unittest.TestCase):
 			{'item_code': item_code, 'rm_item_code': 'Test Extra Item 2', 'stock_uom':'Nos',
 				'qty': 10, 'warehouse': '_Test Warehouse - _TC', 'item_name':'Test Extra Item 2'}]
 
-		rm_item_string = json.dumps(rm_items)
+		rm_item_string = frappe.as_json(rm_items)
 		se = frappe.get_doc(make_subcontract_transfer_entry(po.name, rm_item_string))
 		se.submit()
 
@@ -909,7 +909,7 @@ class TestPurchaseOrder(unittest.TestCase):
 		]
 
 		# Raw Materials transfer entry from stores to supplier's warehouse
-		rm_item_string = json.dumps(rm_items)
+		rm_item_string = frappe.as_json(rm_items)
 		se = frappe.get_doc(make_subcontract_transfer_entry(po.name, rm_item_string))
 		se.submit()
 

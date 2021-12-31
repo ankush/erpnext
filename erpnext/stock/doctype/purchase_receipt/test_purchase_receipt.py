@@ -468,7 +468,7 @@ class TestPurchaseReceipt(ERPNextTestCase):
 				"stock_uom": "Nos"
 			}
 		]
-		rm_item_string = json.dumps(rm_items)
+		rm_item_string = frappe.as_json(rm_items)
 		se = frappe.get_doc(make_subcontract_transfer_entry(po.name, rm_item_string))
 		se.to_warehouse = "_Test Warehouse 1 - _TC"
 		se.save()
@@ -1230,7 +1230,7 @@ class TestPurchaseReceipt(ERPNextTestCase):
 			}
 		]
 
-		rm_item_string = json.dumps(rm_items)
+		rm_item_string = frappe.as_json(rm_items)
 		se = frappe.get_doc(make_rm_stock_entry(po.name, rm_item_string))
 		self.assertEqual(len(se.items), 2)
 		se.items[0].batch_no = ste1.items[0].batch_no

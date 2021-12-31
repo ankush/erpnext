@@ -421,7 +421,7 @@ class Item(WebsiteGenerator):
 					if attr_value.attribute_value in attribute_values_available.get(attr.attribute, []):
 						values.append(attr_value.attribute_value)
 
-		context.variant_info = json.dumps(context.variants)
+		context.variant_info = frappe.as_json(context.variants)
 
 	def set_disabled_attributes(self, context):
 		"""Disable selection options of attribute combinations that do not result in a variant"""
@@ -694,7 +694,7 @@ class Item(WebsiteGenerator):
 					item_wise_tax_detail.pop(old_name)
 
 					frappe.db.set_value(dt, d.name, "item_wise_tax_detail",
-											json.dumps(item_wise_tax_detail), update_modified=False)
+											frappe.as_json(item_wise_tax_detail), update_modified=False)
 
 	def validate_duplicate_item_in_stock_reconciliation(self, old_name, new_name):
 		records = frappe.db.sql(""" SELECT parent, COUNT(*) as records

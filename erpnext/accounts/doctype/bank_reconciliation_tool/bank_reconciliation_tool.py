@@ -151,7 +151,7 @@ def create_journal_entry_bts( bank_transaction_name, reference_number=None, refe
 	else:
 		paid_amount = bank_transaction.withdrawal
 
-	vouchers = json.dumps([{
+	vouchers = frappe.as_json([{
 		"payment_doctype":"Journal Entry",
 		"payment_name":journal_entry.name,
 		"amount":paid_amount}])
@@ -207,7 +207,7 @@ def create_payment_entry_bts( bank_transaction_name, reference_number=None, refe
 	payment_entry.insert()
 
 	payment_entry.submit()
-	vouchers = json.dumps([{
+	vouchers = frappe.as_json([{
 		"payment_doctype":"Payment Entry",
 		"payment_name":payment_entry.name,
 		"amount":paid_amount}])

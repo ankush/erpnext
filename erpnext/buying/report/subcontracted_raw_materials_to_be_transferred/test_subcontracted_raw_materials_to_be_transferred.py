@@ -88,7 +88,7 @@ def transfer_subcontracted_raw_materials(po):
 			'stock_uom': 'Nos'
 		}
 	]
-	rm_item_string = json.dumps(rm_item)
+	rm_item_string = frappe.as_json(rm_item)
 	se = frappe.get_doc(make_rm_stock_entry(po.name, rm_item_string))
 	se.from_warehouse = '_Test Warehouse - _TC'
 	se.to_warehouse = '_Test Warehouse - _TC'

@@ -251,7 +251,7 @@ def make_charts():
 				if not old_content or (json.loads(old_content).get("is_active", "No") == "No" \
 						and json.loads(old_content).get("disabled", "No") == "No"):
 					with open(fpath, "w") as chartfile:
-						chartfile.write(json.dumps(chart, indent=4, sort_keys=True))
+						chartfile.write(frappe.as_json(chart))
 
 					all_roots.setdefault(filename, chart["tree"].keys())
 

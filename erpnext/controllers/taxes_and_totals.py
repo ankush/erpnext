@@ -479,7 +479,7 @@ class calculate_taxes_and_totals(object):
 		if not self.doc.get('is_consolidated'):
 			for tax in self.doc.get("taxes"):
 				if not tax.get("dont_recompute_tax"):
-					tax.item_wise_tax_detail = json.dumps(tax.item_wise_tax_detail, separators=(',', ':'))
+					tax.item_wise_tax_detail = frappe.as_json(tax.item_wise_tax_detail, indent=None)
 
 	def set_discount_amount(self):
 		if self.doc.additional_discount_percentage:

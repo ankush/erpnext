@@ -688,7 +688,7 @@ class QuickBooksMigrator(Document):
 						"price_list_rate": line["SalesItemLineDetail"]["UnitPrice"],
 						"cost_center": self.default_cost_center,
 						"warehouse": self.default_warehouse,
-						"item_tax_rate": json.dumps(self._get_item_taxes(tax_code))
+						"item_tax_rate": frappe.as_json(self._get_item_taxes(tax_code))
 					})
 				else:
 					items.append({
@@ -702,7 +702,7 @@ class QuickBooksMigrator(Document):
 						"price_list_rate": line["Amount"],
 						"cost_center": self.default_cost_center,
 						"warehouse": self.default_warehouse,
-						"item_tax_rate": json.dumps(self._get_item_taxes(tax_code))
+						"item_tax_rate": frappe.as_json(self._get_item_taxes(tax_code))
 					})
 				if is_return:
 					items[-1]["qty"] *= -1
@@ -885,7 +885,7 @@ class QuickBooksMigrator(Document):
 					"price_list_rate": line["ItemBasedExpenseLineDetail"]["UnitPrice"],
 					"warehouse": self.default_warehouse,
 					"cost_center": self.default_cost_center,
-					"item_tax_rate": json.dumps(self._get_item_taxes(tax_code)),
+					"item_tax_rate": frappe.as_json(self._get_item_taxes(tax_code)),
 				})
 			elif line["DetailType"] == "AccountBasedExpenseLineDetail":
 				if line["AccountBasedExpenseLineDetail"]["TaxCodeRef"]["value"] != "TAX":
@@ -905,7 +905,7 @@ class QuickBooksMigrator(Document):
 					"price_list_rate": line["Amount"],
 					"warehouse": self.default_warehouse,
 					"cost_center": self.default_cost_center,
-					"item_tax_rate": json.dumps(self._get_item_taxes(tax_code)),
+					"item_tax_rate": frappe.as_json(self._get_item_taxes(tax_code)),
 				})
 			if is_return:
 				items[-1]["qty"] *= -1

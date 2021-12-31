@@ -564,7 +564,7 @@ def get_item_tax_map(company, item_tax_template, as_json=True):
 			if frappe.get_cached_value("Account", d.tax_type, "company") == company:
 				item_tax_map[d.tax_type] = d.tax_rate
 
-	return json.dumps(item_tax_map) if as_json else item_tax_map
+	return frappe.as_json(item_tax_map) if as_json else item_tax_map
 
 @frappe.whitelist()
 def calculate_service_end_date(args, item=None):
@@ -1184,7 +1184,7 @@ def get_serial_no(args, serial_nos=None, sales_order=None):
 		if args.get('batch_no') and has_serial_no == 1:
 			return get_serial_no_batchwise(args, sales_order)
 		elif has_serial_no == 1:
-			args = json.dumps({"item_code": args.get('item_code'),"warehouse": args.get('warehouse'),"stock_qty": args.get('stock_qty')})
+			args = frappe.as_json({"item_code": args.get('item_code'),"warehouse": args.get('warehouse'),"stock_qty": args.get('stock_qty')})
 			args = process_args(args)
 			serial_no = get_serial_nos_by_fifo(args, sales_order)
 

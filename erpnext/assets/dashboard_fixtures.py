@@ -1,8 +1,6 @@
 # Copyright (c) 2020, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-import json
-
 import frappe
 from frappe import _
 from frappe.utils import get_date_str, nowdate
@@ -58,7 +56,7 @@ def get_charts(fiscal_year, year_start_date, year_end_date):
 			"timespan": "Last Year",
 			"time_interval": "Yearly",
 			"timeseries": 0,
-			"filters_json": json.dumps({
+			"filters_json": frappe.as_json({
 				"company": company,
 				"status": "In Location",
 				"filter_based_on": "Fiscal Year",
@@ -70,7 +68,7 @@ def get_charts(fiscal_year, year_start_date, year_end_date):
 				"group_by": "--Select a group--"
 			}),
 			"type": "Bar",
-			"custom_options": json.dumps({
+			"custom_options": frappe.as_json({
 				"type": "bar",
 				"barOptions": { "stacked": 1 },
 				"axisOptions": { "shortenYAxisNumbers": 1 },
@@ -86,7 +84,7 @@ def get_charts(fiscal_year, year_start_date, year_end_date):
 			"report_name": "Fixed Asset Register",
 			"x_field": "asset_category",
 			"timeseries": 0,
-			"filters_json": json.dumps({
+			"filters_json": frappe.as_json({
 				"company": company,
 				"status":"In Location",
 				"group_by":"Asset Category",
@@ -103,7 +101,7 @@ def get_charts(fiscal_year, year_start_date, year_end_date):
 					"doctype": "Dashboard Chart Field"
 				}
 			],
-			"custom_options": json.dumps({
+			"custom_options": frappe.as_json({
 				"type": "donut",
 				"height": 300,
 				"axisOptions": {"shortenYAxisNumbers": 1}
@@ -116,7 +114,7 @@ def get_charts(fiscal_year, year_start_date, year_end_date):
 			"report_name": "Fixed Asset Register",
 			"x_field": "location",
 			"timeseries": 0,
-			"filters_json": json.dumps({
+			"filters_json": frappe.as_json({
 				"company": company,
 				"status":"In Location",
 				"group_by":"Location",
@@ -133,7 +131,7 @@ def get_charts(fiscal_year, year_start_date, year_end_date):
 					"doctype": "Dashboard Chart Field"
 				}
 			],
-			"custom_options": json.dumps({
+			"custom_options": frappe.as_json({
 				"type": "donut",
 				"height": 300,
 				"axisOptions": {"shortenYAxisNumbers": 1}
@@ -162,7 +160,7 @@ def get_number_cards(fiscal_year, year_start_date, year_end_date):
 			"is_public": 1,
 			"show_percentage_stats": 1,
 			"stats_time_interval": "Monthly",
-			"filters_json": json.dumps([
+			"filters_json": frappe.as_json([
 				['Asset', 'creation', 'between', [year_start_date, year_end_date]]
 			]),
 			"doctype": "Number Card",

@@ -49,7 +49,7 @@ class TestBankTransaction(unittest.TestCase):
 	def test_reconcile(self):
 		bank_transaction = frappe.get_doc("Bank Transaction", dict(description="1512567 BG/000003025 OPSKATTUZWXXX AT776000000098709849 Herr G"))
 		payment = frappe.get_doc("Payment Entry", dict(party="Mr G", paid_amount=1700))
-		vouchers = json.dumps([{
+		vouchers = frappe.as_json([{
 		"payment_doctype":"Payment Entry",
 		"payment_name":payment.name,
 		"amount":bank_transaction.unallocated_amount}])
@@ -77,7 +77,7 @@ class TestBankTransaction(unittest.TestCase):
 	def test_already_reconciled(self):
 		bank_transaction = frappe.get_doc("Bank Transaction", dict(description="1512567 BG/000002918 OPSKATTUZWXXX AT776000000098709837 Herr G"))
 		payment = frappe.get_doc("Payment Entry", dict(party="Mr G", paid_amount=1200))
-		vouchers = json.dumps([{
+		vouchers = frappe.as_json([{
 			"payment_doctype":"Payment Entry",
 			"payment_name":payment.name,
 			"amount":bank_transaction.unallocated_amount}])
@@ -85,7 +85,7 @@ class TestBankTransaction(unittest.TestCase):
 
 		bank_transaction = frappe.get_doc("Bank Transaction", dict(description="1512567 BG/000002918 OPSKATTUZWXXX AT776000000098709837 Herr G"))
 		payment = frappe.get_doc("Payment Entry", dict(party="Mr G", paid_amount=1200))
-		vouchers = json.dumps([{
+		vouchers = frappe.as_json([{
 			"payment_doctype":"Payment Entry",
 			"payment_name":payment.name,
 			"amount":bank_transaction.unallocated_amount}])
@@ -95,7 +95,7 @@ class TestBankTransaction(unittest.TestCase):
 	def test_clear_sales_invoice(self):
 		bank_transaction = frappe.get_doc("Bank Transaction", dict(description="I2015000011 VD/000002514 ATWWXXX AT4701345000003510057 Bio"))
 		payment = frappe.get_doc("Sales Invoice", dict(customer="Fayva", status=["=", "Paid"]))
-		vouchers = json.dumps([{
+		vouchers = frappe.as_json([{
 			"payment_doctype":"Sales Invoice",
 			"payment_name":payment.name,
 			"amount":bank_transaction.unallocated_amount}])

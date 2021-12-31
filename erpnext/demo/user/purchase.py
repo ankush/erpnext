@@ -2,7 +2,6 @@
 # License: GNU General Public License v3. See license.txt
 
 
-import json
 import random
 
 import frappe
@@ -162,7 +161,7 @@ def make_subcontract():
 
 		# transfer material for sub-contract
 		rm_items = get_rm_item(po.items[0], po.supplied_items[0])
-		stock_entry = frappe.get_doc(make_rm_stock_entry(po.name, json.dumps([rm_items])))
+		stock_entry = frappe.get_doc(make_rm_stock_entry(po.name, frappe.as_json([rm_items])))
 		stock_entry.from_warehouse = "Stores - WPL"
 		stock_entry.to_warehouse = "Supplier - WPL"
 		stock_entry.insert()

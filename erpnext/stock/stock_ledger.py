@@ -205,8 +205,8 @@ def validate_item_warehouse(args):
 
 def update_args_in_repost_item_valuation(doc, index, args, distinct_item_warehouses):
 	frappe.db.set_value(doc.doctype, doc.name, {
-		'items_to_be_repost': json.dumps(args, default=str),
-		'distinct_item_and_warehouse': json.dumps({str(k): v for k,v in distinct_item_warehouses.items()}, default=str),
+		'items_to_be_repost': frappe.as_json(args, indent=None),
+		'distinct_item_and_warehouse': frappe.as_json({str(k): v for k,v in distinct_item_warehouses.items()}, indent=None),
 		'current_index': index
 	})
 
@@ -214,7 +214,7 @@ def update_args_in_repost_item_valuation(doc, index, args, distinct_item_warehou
 
 	frappe.publish_realtime('item_reposting_progress', {
 		'name': doc.name,
-		'items_to_be_repost': json.dumps(args, default=str),
+		'items_to_be_repost': frappe.as_json(args, indent=None),
 		'current_index': index
 	})
 
@@ -469,7 +469,7 @@ class update_entries_after(object):
 		sle.qty_after_transaction = self.wh_data.qty_after_transaction
 		sle.valuation_rate = self.wh_data.valuation_rate
 		sle.stock_value = self.wh_data.stock_value
-		sle.stock_queue = json.dumps(self.wh_data.stock_queue)
+		sle.stock_queue = frappe.as_json(self.wh_data.stock_queue, indent=None)
 		sle.stock_value_difference = stock_value_difference
 		sle.doctype="Stock Ledger Entry"
 		frappe.get_doc(sle).db_update()
