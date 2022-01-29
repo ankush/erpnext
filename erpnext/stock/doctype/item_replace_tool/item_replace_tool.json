@@ -1,0 +1,109 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2022-01-29 12:25:18.100822",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "original_item",
+  "column_break_2",
+  "new_item",
+  "replace_details_section",
+  "transfer_stock",
+  "new_bom",
+  "new_product_bundle",
+  "update_item_prices",
+  "replace"
+ ],
+ "fields": [
+  {
+   "fieldname": "original_item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Original Item",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "new_item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "New Item",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "replace_details_section",
+   "fieldtype": "Section Break",
+   "label": "Replace Details"
+  },
+  {
+   "default": "1",
+   "description": "Transfer the stock of the original item to the new item using Stock Reconciliation.",
+   "fieldname": "transfer_stock",
+   "fieldtype": "Check",
+   "label": "Transfer Stock"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "update_item_prices",
+   "fieldtype": "Check",
+   "label": "Update Item Prices"
+  },
+  {
+   "default": "0",
+   "fieldname": "new_bom",
+   "fieldtype": "Check",
+   "label": "Create new BOM"
+  },
+  {
+   "default": "0",
+   "fieldname": "new_product_bundle",
+   "fieldtype": "Check",
+   "label": "Create new Product Bundles"
+  },
+  {
+   "fieldname": "replace",
+   "fieldtype": "Button",
+   "label": "Replace"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2022-01-29 12:55:38.927685",
+ "modified_by": "Administrator",
+ "module": "Stock",
+ "name": "Item Replace Tool",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "Stock Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
