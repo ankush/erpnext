@@ -24,7 +24,6 @@ class NegativeStockError(frappe.ValidationError): pass
 class SerialNoExistsInFutureTransaction(frappe.ValidationError):
 	pass
 
-_exceptions = frappe.local('stockledger_exceptions')
 
 def make_sl_entries(sl_entries, allow_negative_stock=False, via_landed_cost_voucher=False):
 	from erpnext.controllers.stock_controller import future_sle_exists
@@ -79,9 +78,7 @@ def repost_current_voucher(args, allow_negative_stock=False, via_landed_cost_vou
 		if args.get("is_cancelled") and via_landed_cost_voucher:
 			return
 
-		# Reposts only current voucher SL Entries
-		# Updates valuation rate, stock value, stock queue for current transaction
-		update_entries_after({
+		args_for_repost = {
 			"item_code": args.get('item_code'),
 			"warehouse": args.get('warehouse'),
 			"posting_date": args.get("posting_date"),
@@ -90,7 +87,14 @@ def repost_current_voucher(args, allow_negative_stock=False, via_landed_cost_vou
 			"voucher_no": args.get("voucher_no"),
 			"sle_id": args.get('name'),
 			"creation": args.get('creation')
-		}, allow_negative_stock=allow_negative_stock, via_landed_cost_voucher=via_landed_cost_voucher)
+		}
+
+		if args.get("batch_no"):
+			args_for_repost.update({"batch_no":args.get("batch_no")})
+
+		# Reposts only current voucher SL Entries
+		# Updates valuation rate, stock value, stock queue for current transaction
+		update_entries_after(args_for_repost, allow_negative_stock=allow_negative_stock, via_landed_cost_voucher=via_landed_cost_voucher)
 
 		# update qty in future sle and Validate negative qty
 		update_qty_in_future_sle(args, allow_negative_stock)
@@ -171,14 +175,20 @@ def repost_future_sle(args=None, voucher_type=None, voucher_no=None, allow_negat
 	while i < len(args):
 		validate_item_warehouse(args[i])
 
-		obj = update_entries_after({
-			'item_code': args[i].get('item_code'),
-			'warehouse': args[i].get('warehouse'),
-			'posting_date': args[i].get('posting_date'),
-			'posting_time': args[i].get('posting_time'),
-			'creation': args[i].get('creation'),
-			'distinct_item_warehouses': distinct_item_warehouses
-		}, allow_negative_stock=allow_negative_stock, via_landed_cost_voucher=via_landed_cost_voucher)
+		args_for_update_after_entries = {
+			"item_code": args[i].get('item_code'),
+			"warehouse": args[i].get('warehouse'),
+			"posting_date": args[i].get('posting_date'),
+			"posting_time": args[i].get('posting_time'),
+			"creation": args[i].get("creation"),
+			"distinct_item_warehouses": distinct_item_warehouses
+		}
+		if args[i].get('batch_no'):
+			args_for_update_after_entries.update({'batch_no': args[i].get('batch_no')})
+		obj = update_entries_after(
+			args_for_update_after_entries, allow_negative_stock=allow_negative_stock,
+			via_landed_cost_voucher=via_landed_cost_voucher
+		)
 
 		distinct_item_warehouses[(args[i].get('item_code'), args[i].get('warehouse'))].reposting_status = True
 
@@ -226,7 +236,7 @@ def get_items_to_be_repost(voucher_type, voucher_no, doc=None):
 
 	return frappe.db.get_all("Stock Ledger Entry",
 		filters={"voucher_type": voucher_type, "voucher_no": voucher_no},
-		fields=["item_code", "warehouse", "posting_date", "posting_time", "creation"],
+		fields=["item_code", "warehouse", "posting_date", "posting_time", "creation", "batch_no"],
 		order_by="creation asc",
 		group_by="item_code, warehouse"
 	)
@@ -301,7 +311,7 @@ class update_entries_after(object):
 
 			self.data = {
 				warehouse1: {
-					'previus_sle': {},
+					'previous_sle': {},
 					'qty_after_transaction': 10,
 					'valuation_rate': 100,
 					'stock_value': 1000,
@@ -631,7 +641,9 @@ class update_entries_after(object):
 			if not allow_zero_rate:
 				self.wh_data.valuation_rate = get_valuation_rate(sle.item_code, sle.warehouse,
 					sle.voucher_type, sle.voucher_no, self.allow_zero_rate,
-					currency=erpnext.get_company_currency(sle.company), company=sle.company)
+					currency=erpnext.get_company_currency(sle.company),
+					company=sle.company,
+					batch_no=sle.get("batch_no"))
 
 	def get_incoming_value_for_serial_nos(self, sle, serial_nos):
 		# get rate from serial nos within same company
@@ -699,7 +711,9 @@ class update_entries_after(object):
 				if not allow_zero_valuation_rate:
 					self.wh_data.valuation_rate = get_valuation_rate(sle.item_code, sle.warehouse,
 						sle.voucher_type, sle.voucher_no, self.allow_zero_rate,
-						currency=erpnext.get_company_currency(sle.company), company=sle.company)
+						currency=erpnext.get_company_currency(sle.company),
+						company=sle.company,
+						batch_no=sle.get("batch_no"))
 
 	def update_queue_values(self, sle):
 		incoming_rate = flt(sle.incoming_rate)
@@ -719,7 +733,7 @@ class update_entries_after(object):
 				if not allow_zero_valuation_rate:
 					return get_valuation_rate(sle.item_code, sle.warehouse,
 						sle.voucher_type, sle.voucher_no, self.allow_zero_rate,
-						currency=erpnext.get_company_currency(sle.company), company=sle.company)
+						currency=erpnext.get_company_currency(sle.company), company=sle.company, batch_no=sle.get("batch_no"))
 				else:
 					return 0.0
 
@@ -897,47 +911,102 @@ def get_sle_by_voucher_detail_no(voucher_detail_no, excluded_sle=None):
 		['item_code', 'warehouse', 'posting_date', 'posting_time', 'timestamp(posting_date, posting_time) as timestamp'],
 		as_dict=1)
 
-def get_valuation_rate(item_code, warehouse, voucher_type, voucher_no,
-	allow_zero_rate=False, currency=None, company=None, raise_error_if_no_rate=True):
+def get_valuation_rate(item_code, warehouse=None, voucher_type=None,
+	voucher_no=None, allow_zero_rate=False, currency=None, company=None,
+	raise_error_if_no_rate=True, batch_no=None):
+	"""
+		Valuation rate of an item_code is fetched, in decreasing order of
+		precedence, from the following places:
 
+			1. Moving average rate of batch's if batch specified and has batchwise valuation.
+				field: valuation_rate
+
+			2. Last SLE having matching item_code, warehouse;
+				field: valuation_rate
+
+			3. Last SLE having matching item_code;
+				field: valuation_rate
+
+			4. Item Master;
+				field: valuation_rate
+
+			5. Item Master;
+				field: standard_rate
+
+			6. Item Price Master, buying, having matching item_code;
+				field: price_list_rate
+
+		if it isn't found in the above list then return 0.0 if allow_zero_rate.
+	"""
 	if not company:
 		company =  frappe.get_cached_value("Warehouse", warehouse, "company")
 
-	# Get valuation rate from last sle for the same item and warehouse
-	last_valuation_rate = frappe.db.sql("""select valuation_rate
-		from `tabStock Ledger Entry` force index (item_warehouse)
-		where
-			item_code = %s
-			AND warehouse = %s
-			AND valuation_rate >= 0
-			AND is_cancelled = 0
-			AND NOT (voucher_no = %s AND voucher_type = %s)
-		order by posting_date desc, posting_time desc, name desc limit 1""", (item_code, warehouse, voucher_no, voucher_type))
+	voucher_condition = ""
+	if voucher_no and voucher_type:
+		voucher_condition = "AND NOT (voucher_no = %(voucher_no)s AND voucher_type = %(voucher_type)s)"
+
+	query_args = dict(
+		item_code=item_code,
+		batch_no=batch_no,
+		warehouse=warehouse,
+		voucher_no=voucher_no,
+		voucher_type=voucher_type
+	)
+
+	last_valuation_rate = None
+	if batch_no and warehouse and frappe.db.get_value("Batch", batch_no, "use_batchwise_valuation"):
+		# 1. Get average valuation rate from batch's stock movement
+		last_valuation_rate = frappe.db.sql("""
+			select
+				sum(stock_value_difference) / sum(actual_qty) as valuation_rate
+			from `tabStock Ledger Entry`
+			where
+				item_code = %(item_code)s
+				and warehouse = %(warehouse)s
+				and batch_no=%(batch_no)s
+				and is_cancelled = 0
+				{voucher_condition}
+			""".format(voucher_condition=voucher_condition), query_args)
+
+	if (not last_valuation_rate or not last_valuation_rate[0][0]) and warehouse:
+		# 2. Get valuation_rate from last SLE with any batch_no, and matching warehouse
+		last_valuation_rate = frappe.db.sql("""SELECT valuation_rate
+			FROM `tabStock Ledger Entry` FORCE INDEX (item_warehouse)
+			WHERE
+				item_code = %(item_code)s
+				AND warehouse = %(warehouse)s
+				AND is_cancelled = 0
+				AND valuation_rate >= 0
+				{voucher_condition}
+			ORDER BY timestamp(posting_date, posting_time) DESC, creation DESC
+			LIMIT 1""".format(voucher_condition=voucher_condition),
+			query_args)
 
 	if not last_valuation_rate:
-		# Get valuation rate from last sle for the item against any warehouse
+		# 3. Get valuation rate from last sle for the item against any warehouse
 		last_valuation_rate = frappe.db.sql("""select valuation_rate
 			from `tabStock Ledger Entry` force index (item_code)
 			where
-				item_code = %s
+				item_code = %(item_code)s
 				AND valuation_rate > 0
 				AND is_cancelled = 0
-				AND NOT(voucher_no = %s AND voucher_type = %s)
-			order by posting_date desc, posting_time desc, name desc limit 1""", (item_code, voucher_no, voucher_type))
+				{voucher_condition}
+			ORDER BY timestamp(posting_date, posting_time) DESC, creation DESC
+			LIMIT 1""".format(voucher_condition=voucher_condition),
+			query_args)
 
 	if last_valuation_rate:
 		return flt(last_valuation_rate[0][0])
 
-	# If negative stock allowed, and item delivered without any incoming entry,
-	# system does not found any SLE, then take valuation rate from Item
+	# 4. Get valuation_rate from Item.valuation_rate
 	valuation_rate = frappe.db.get_value("Item", item_code, "valuation_rate")
 
 	if not valuation_rate:
-		# try Item Standard rate
+		# 5. Get valuation_rate from Item.standard_rate
 		valuation_rate = frappe.db.get_value("Item", item_code, "standard_rate")
 
 		if not valuation_rate:
-			# try in price list
+			# 6. Get valuation_rate from Item Price.price_list_rate
 			valuation_rate = frappe.db.get_value('Item Price',
 				dict(item_code=item_code, buying=1, currency=currency),
 				'price_list_rate')
@@ -957,7 +1026,7 @@ def get_valuation_rate(item_code, warehouse, voucher_type, voucher_no,
 
 		frappe.throw(msg=msg, title=_("Valuation Rate Missing"))
 
-	return valuation_rate
+	return flt(valuation_rate)
 
 def update_qty_in_future_sle(args, allow_negative_stock=False):
 	"""Recalculate Qty after Transaction in future SLEs based on current SLE."""
