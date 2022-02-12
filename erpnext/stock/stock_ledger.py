@@ -457,6 +457,8 @@ class update_entries_after(object):
 				self.wh_data.qty_after_transaction = sle.qty_after_transaction
 
 			self.wh_data.stock_value = flt(self.wh_data.qty_after_transaction) * flt(self.wh_data.valuation_rate)
+		elif sle.batch_no and frappe.db.get_value("Batch", sle.batch_no, "use_batchwise_valuation", cache=True):
+			self.update_batched_values(sle)
 		else:
 			if sle.voucher_type=="Stock Reconciliation" and not sle.batch_no:
 				# assert
@@ -751,6 +753,21 @@ class update_entries_after(object):
 			self.wh_data.stock_queue.append([0, sle.incoming_rate or sle.outgoing_rate or self.wh_data.valuation_rate])
 
 
+	def update_batched_values(self, sle):
+		incoming_rate = flt(sle.incoming_rate)
+		actual_qty = flt(sle.actual_qty)
+		if actual_qty > 0:
+			# add stock
+			pass
+		else:
+			# deduct stock
+			# fetch rate of consumption from previous data
+			pass
+
+		# [x] Total qty
+		# [ ] Total value
+		# [ ] valuation rate (average, not batched)
+		self.wh_data.qty_after_transaction += actual_qty
 
 	def check_if_allow_zero_valuation_rate(self, voucher_type, voucher_detail_no):
 		ref_item_dt = ""
