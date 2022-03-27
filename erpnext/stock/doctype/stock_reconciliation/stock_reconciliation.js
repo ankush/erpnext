@@ -55,6 +55,26 @@ frappe.ui.form.on("Stock Reconciliation", {
 		}
 	},
 
+	scan_barcode: function(frm) {
+		frm.set_value("scan_mode", 1);  // make sure qty are not overriden when scanning items.
+		let transaction_controller = new erpnext.TransactionController({frm:frm});
+		transaction_controller.scan_barcode();
+	},
+
+	scan_mode: function(frm) {
+		if (frm.doc.scan_mode) {
+			frappe.show_alert({
+				message: __("Scan mode enabled, existing quantity will not be fetched."),
+				indicator: "green"
+			});
+		}
+	},
+
+	set_warehouse: function(frm) {
+		let transaction_controller = new erpnext.TransactionController({frm:frm});
+		transaction_controller.autofill_warehouse(frm.doc.items, "warehouse", frm.doc.set_warehouse);
+	},
+
 	get_items: function(frm) {
 		let fields = [
 			{
@@ -148,7 +168,9 @@ frappe.ui.form.on("Stock Reconciliation", {
 					batch_no: d.batch_no
 				},
 				callback: function(r) {
-					frappe.model.set_value(cdt, cdn, "qty", r.message.qty);
+					if (!frm.doc.scan_mode) {
+						frappe.model.set_value(cdt, cdn, "qty", r.message.qty);
+					}
 					frappe.model.set_value(cdt, cdn, "valuation_rate", r.message.rate);
 					frappe.model.set_value(cdt, cdn, "current_qty", r.message.qty);
 					frappe.model.set_value(cdt, cdn, "current_valuation_rate", r.message.rate);
@@ -255,7 +277,14 @@ frappe.ui.form.on("Stock Reconciliation Item", {
 			const serial_nos = child.serial_no.trim().split('\n');
 			frappe.model.set_value(cdt, cdn, "qty", serial_nos.length);
 		}
-	}
+	},
+
+	items_add: function(frm, cdt, cdn) {
+		var item = frappe.get_doc(cdt, cdn);
+		if (!item.warehouse && frm.doc.set_warehouse) {
+			frappe.model.set_value(cdt, cdn, "warehouse", frm.doc.set_warehouse);
+		}
+	},
 
 });
 
