@@ -83,6 +83,7 @@ frappe.ui.form.on("BOM", {
 
 		if (!frm.doc.__islocal && frm.doc.docstatus<2) {
 			frm.add_custom_button(__("Update Cost"), function() {
+				// XXX
 				frm.events.update_cost(frm, true);
 			});
 			frm.add_custom_button(__("Browse BOM"), function() {
@@ -389,6 +390,7 @@ erpnext.bom.BomController = class BomController extends erpnext.TransactionContr
 		if(this.frm.doc.currency === this.get_company_currency()) {
 			this.frm.set_value("conversion_rate", 1.0);
 		} else {
+			// XXX
 			erpnext.bom.update_cost(doc);
 		}
 	}
@@ -424,6 +426,7 @@ erpnext.bom.BomController = class BomController extends erpnext.TransactionContr
 			item.stock_qty = flt(item.qty * item.conversion_factor, precision("stock_qty", item));
 			refresh_field("stock_qty", item.name, item.parentfield);
 			this.toggle_conversion_factor(item);
+			// XXX
 			this.frm.events.update_cost(this.frm);
 		}
 	}
@@ -515,6 +518,7 @@ cur_frm.cscript.rate = function(doc, cdt, cdn) {
 	}
 };
 
+// XXX
 erpnext.bom.update_cost = function(doc) {
 	erpnext.bom.calculate_op_cost(doc);
 	erpnext.bom.calculate_rm_cost(doc);
@@ -596,6 +600,7 @@ erpnext.bom.calculate_total = function(doc) {
 };
 
 cur_frm.cscript.validate = function(doc) {
+	// XXX
 	erpnext.bom.update_cost(doc);
 };
 
