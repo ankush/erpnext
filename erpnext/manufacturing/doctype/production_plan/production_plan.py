@@ -34,6 +34,9 @@ class ProductionPlan(Document):
 		self.set_status()
 		self._rename_temporary_references()
 
+	def before_submit(self):
+		self.validate_mandatory_fields()
+
 	def set_pending_qty_in_row_without_reference(self):
 		"Set Pending Qty in independent rows (not from SO or MR)."
 		if self.docstatus > 0:  # set only to initialise value before submit
@@ -57,6 +60,14 @@ class ProductionPlan(Document):
 
 			if not flt(d.planned_qty):
 				frappe.throw(_("Please enter Planned Qty for Item {0} at row {1}").format(d.item_code, d.idx))
+
+	def validate_mandatory_fields(self):
+		for d in self.get("sub_assembly_items") or []:
+			if d.type_of_manufacturing == "Subcontract" and not d.supplier:
+				frappe.throw(
+					_("Supplier required in subcontracted item {}").format(d.production_item),
+					title=_("Mandatory fields"),
+				)
 
 	def _rename_temporary_references(self):
 		"""po_items and sub_assembly_items items are both constructed client side without saving.
