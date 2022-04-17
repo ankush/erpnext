@@ -31,6 +31,12 @@ test_ignore = ["BOM"]
 test_dependencies = ["Warehouse", "Item Group", "Item Tax Template", "Brand", "Item Attribute"]
 
 
+def create_test_item(doc, **kwargs):
+	doc.item_code = frappe.generate_hash()
+	doc.item_group = "Products"
+	doc.is_stock_item = 1
+
+
 def make_item(item_code=None, properties=None):
 	if not item_code:
 		item_code = frappe.generate_hash(length=16)
@@ -61,18 +67,11 @@ def make_item(item_code=None, properties=None):
 
 
 class TestItem(FrappeTestCase):
+	DOCTYPE = "Item"
+
 	def setUp(self):
 		super().setUp()
 		frappe.flags.attribute_values = None
-
-	def get_item(self, idx):
-		item_code = test_records[idx].get("item_code")
-		if not frappe.db.exists("Item", item_code):
-			item = frappe.copy_doc(test_records[idx])
-			item.insert()
-		else:
-			item = frappe.get_doc("Item", item_code)
-		return item
 
 	def test_get_item_details(self):
 		# delete modified item price record and make as per test_records
@@ -228,25 +227,21 @@ class TestItem(FrappeTestCase):
 			)
 
 	def test_item_defaults(self):
-		frappe.delete_doc_if_exists("Item", "Test Item With Defaults", force=1)
-		make_item(
-			"Test Item With Defaults",
-			{
-				"item_group": "_Test Item Group",
-				"brand": "_Test Brand With Item Defaults",
-				"item_defaults": [
-					{
-						"company": "_Test Company",
-						"default_warehouse": "_Test Warehouse 2 - _TC",  # no override
-						"expense_account": "_Test Account Stock Expenses - _TC",  # override brand default
-						"buying_cost_center": "_Test Write Off Cost Center - _TC",  # override item group default
-					}
-				],
-			},
+		item = self.get_test_doc(
+			item_group="_Test Item Group",
+			brand="_Test Brand With Item Defaults",
+			item_defaults=[
+				{
+					"company": "_Test Company",
+					"default_warehouse": "_Test Warehouse 2 - _TC",  # no override
+					"expense_account": "_Test Account Stock Expenses - _TC",  # override brand default
+					"buying_cost_center": "_Test Write Off Cost Center - _TC",  # override item group default
+				}
+			],
 		)
 
 		sales_item_check = {
-			"item_code": "Test Item With Defaults",
+			"item_code": item.name,
 			"warehouse": "_Test Warehouse 2 - _TC",  # from item
 			"income_account": "_Test Account Sales - _TC",  # from brand
 			"expense_account": "_Test Account Stock Expenses - _TC",  # from item
@@ -254,7 +249,7 @@ class TestItem(FrappeTestCase):
 		}
 		sales_item_details = get_item_details(
 			{
-				"item_code": "Test Item With Defaults",
+				"item_code": item.name,
 				"company": "_Test Company",
 				"price_list": "_Test Price List",
 				"currency": "_Test Currency",
@@ -269,7 +264,7 @@ class TestItem(FrappeTestCase):
 			self.assertEqual(value, sales_item_details.get(key))
 
 		purchase_item_check = {
-			"item_code": "Test Item With Defaults",
+			"item_code": item.name,
 			"warehouse": "_Test Warehouse 2 - _TC",  # from item
 			"expense_account": "_Test Account Stock Expenses - _TC",  # from item
 			"income_account": "_Test Account Sales - _TC",  # from brand
@@ -277,7 +272,7 @@ class TestItem(FrappeTestCase):
 		}
 		purchase_item_details = get_item_details(
 			{
-				"item_code": "Test Item With Defaults",
+				"item_code": item.name,
 				"company": "_Test Company",
 				"price_list": "_Test Price List",
 				"currency": "_Test Currency",
@@ -292,23 +287,22 @@ class TestItem(FrappeTestCase):
 			self.assertEqual(value, purchase_item_details.get(key))
 
 	def test_item_default_validations(self):
+		item = self.get_test_doc(
+			save=False,
+			item_group="_Test Item Group",
+			item_defaults=[
+				{
+					"company": "_Test Company 1",
+					"default_warehouse": "_Test Warehouse - _TC",
+					"expense_account": "Stock In Hand - _TC",
+					"buying_cost_center": "_Test Cost Center - _TC",
+					"selling_cost_center": "_Test Cost Center - _TC",
+				}
+			],
+		)
 
 		with self.assertRaises(frappe.ValidationError) as ve:
-			make_item(
-				"Bad Item defaults",
-				{
-					"item_group": "_Test Item Group",
-					"item_defaults": [
-						{
-							"company": "_Test Company 1",
-							"default_warehouse": "_Test Warehouse - _TC",
-							"expense_account": "Stock In Hand - _TC",
-							"buying_cost_center": "_Test Cost Center - _TC",
-							"selling_cost_center": "_Test Cost Center - _TC",
-						}
-					],
-				},
-			)
+			item.save()
 
 		self.assertTrue(
 			"belong to company" in str(ve.exception).lower(),
@@ -474,21 +468,12 @@ class TestItem(FrappeTestCase):
 		self.assertFalse(frappe.db.exists("Item", "Test Item Bundle Item 1"))
 
 	def test_uom_conversion_factor(self):
-		if frappe.db.exists("Item", "Test Item UOM"):
-			frappe.delete_doc("Item", "Test Item UOM")
+		item = self.get_test_doc(stock_uom="Gram", uoms=[dict(uom="Carat"), dict(uom="Kg")])
 
-		item_doc = make_item(
-			"Test Item UOM", {"stock_uom": "Gram", "uoms": [dict(uom="Carat"), dict(uom="Kg")]}
-		)
-
-		for d in item_doc.uoms:
-			value = get_uom_conv_factor(d.uom, item_doc.stock_uom)
-			d.conversion_factor = value
-
-		self.assertEqual(item_doc.uoms[0].uom, "Carat")
-		self.assertEqual(item_doc.uoms[0].conversion_factor, 0.2)
-		self.assertEqual(item_doc.uoms[1].uom, "Kg")
-		self.assertEqual(item_doc.uoms[1].conversion_factor, 1000)
+		self.assertEqual(item.uoms[0].uom, "Carat")
+		self.assertEqual(item.uoms[0].conversion_factor, 0.2)
+		self.assertEqual(item.uoms[1].uom, "Kg")
+		self.assertEqual(item.uoms[1].conversion_factor, 1000)
 
 	def test_uom_conv_intermediate(self):
 		factor = get_uom_conv_factor("Pound", "Gram")
@@ -686,7 +671,7 @@ class TestItem(FrappeTestCase):
 		transactions that consume inventory."""
 		from erpnext.stock.stock_ledger import is_negative_stock_allowed
 
-		item = make_item("_TestNegativeItemSetting", {"allow_negative_stock": 1, "valuation_rate": 100})
+		item = self.get_test_doc(allow_negative_stock=1, valuation_rate=100)
 		self.assertTrue(is_negative_stock_allowed(item_code=item.name))
 
 		self.consume_item_code_with_differet_stock_transactions(item_code=item.name)
@@ -696,7 +681,7 @@ class TestItem(FrappeTestCase):
 		"""same as test above but backdated entries"""
 		from erpnext.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 
-		item = make_item("_TestNegativeItemSetting", {"allow_negative_stock": 1, "valuation_rate": 100})
+		item = self.get_test_doc(allow_negative_stock=1, valuation_rate=100)
 
 		# create a future entry so all new entries are backdated
 		make_stock_entry(
@@ -706,9 +691,7 @@ class TestItem(FrappeTestCase):
 
 	@change_settings("Stock Settings", {"sample_retention_warehouse": "_Test Warehouse - _TC"})
 	def test_retain_sample(self):
-		item = make_item(
-			"_TestRetainSample", {"has_batch_no": 1, "retain_sample": 1, "sample_quantity": 1}
-		)
+		item = self.get_test_doc(has_batch_no=1, retain_sample=1, sample_quantity=1)
 
 		self.assertEqual(item.has_batch_no, 1)
 		self.assertEqual(item.retain_sample, 1)
@@ -745,7 +728,7 @@ class TestItem(FrappeTestCase):
 		self.assertTrue(get_data(item_group="All Item Groups"))
 
 	def test_empty_description(self):
-		item = make_item(properties={"description": "<p></p>"})
+		item = self.get_test_doc(description="<p></p>")
 		self.assertEqual(item.description, item.item_name)
 		item.description = ""
 		item.save()
@@ -767,7 +750,7 @@ class TestItem(FrappeTestCase):
 
 		properties = {"has_batch_no": 0, "allow_negative_stock": 1, "valuation_rate": 10}
 		for transaction_creator in transaction_creators:
-			item = make_item(properties=properties)
+			item = self.get_test_doc(**properties)
 			transaction = transaction_creator(item.name)
 			item.has_batch_no = 1
 			self.assertRaises(frappe.ValidationError, item.save)
