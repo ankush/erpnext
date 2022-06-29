@@ -60,9 +60,6 @@ from frappe.model.document import Document
 
 
 class LeaveApplication(Document):
-	def get_feed(self):
-		return _("{0}: From {0} of type {1}").format(self.employee_name, self.leave_type)
-
 	def validate(self):
 		validate_active_employee(self.employee)
 		set_employee_name(self)

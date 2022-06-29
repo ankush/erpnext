@@ -35,9 +35,6 @@ class JournalEntry(AccountsController):
 	def __init__(self, *args, **kwargs):
 		super(JournalEntry, self).__init__(*args, **kwargs)
 
-	def get_feed(self):
-		return self.voucher_type
-
 	def validate(self):
 		if self.voucher_type == "Opening Entry":
 			self.is_opening = "Yes"
