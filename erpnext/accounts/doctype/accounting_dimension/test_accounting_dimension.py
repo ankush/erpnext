@@ -12,8 +12,14 @@ test_dependencies = ["Cost Center", "Location", "Warehouse", "Department"]
 
 
 class TestAccountingDimension(unittest.TestCase):
-	def setUp(self):
+	@classmethod
+	def setUpClass(cls):
 		create_dimension()
+		super().setUpClass()
+
+	@classmethod
+	def tearDownClass(cls):
+		disable_dimension()
 
 	def test_dimension_against_sales_invoice(self):
 		si = create_sales_invoice(do_not_save=1)
@@ -76,9 +82,6 @@ class TestAccountingDimension(unittest.TestCase):
 		si.save()
 		self.assertRaises(frappe.ValidationError, si.submit)
 
-	def tearDown(self):
-		disable_dimension()
-
 
 def create_dimension():
 	frappe.set_user("Administrator")
@@ -90,10 +93,6 @@ def create_dimension():
 				"document_type": "Department",
 			}
 		).insert()
-	else:
-		dimension = frappe.get_doc("Accounting Dimension", "Department")
-		dimension.disabled = 0
-		dimension.save()
 
 	if not frappe.db.exists("Accounting Dimension", {"document_type": "Location"}):
 		dimension1 = frappe.get_doc(
@@ -114,10 +113,6 @@ def create_dimension():
 		)
 
 		dimension1.insert()
-		dimension1.save()
-	else:
-		dimension1 = frappe.get_doc("Accounting Dimension", "Location")
-		dimension1.disabled = 0
 		dimension1.save()
 
 

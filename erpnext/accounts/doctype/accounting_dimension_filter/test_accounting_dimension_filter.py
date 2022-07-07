@@ -16,10 +16,21 @@ test_dependencies = ["Location", "Cost Center", "Department"]
 
 
 class TestAccountingDimensionFilter(unittest.TestCase):
-	def setUp(self):
+	@classmethod
+	def setUpClass(cls):
 		create_dimension()
 		create_accounting_dimension_filter()
-		self.invoice_list = []
+		cls.invoice_list = []
+
+	@classmethod
+	def tearDown(cls):
+		disable_dimension_filter()
+		disable_dimension()
+
+		for si in cls.invoice_list:
+			si.load_from_db()
+			if si.docstatus == 1:
+				si.cancel()
 
 	def test_allowed_dimension_validation(self):
 		si = create_sales_invoice(do_not_save=1)
@@ -44,15 +55,6 @@ class TestAccountingDimensionFilter(unittest.TestCase):
 		self.assertRaises(MandatoryAccountDimensionError, si.submit)
 		self.invoice_list.append(si)
 
-	def tearDown(self):
-		disable_dimension_filter()
-		disable_dimension()
-
-		for si in self.invoice_list:
-			si.load_from_db()
-			if si.docstatus == 1:
-				si.cancel()
-
 
 def create_accounting_dimension_filter():
 	if not frappe.db.get_value(
@@ -74,10 +76,6 @@ def create_accounting_dimension_filter():
 				],
 			}
 		).insert()
-	else:
-		doc = frappe.get_doc("Accounting Dimension Filter", {"accounting_dimension": "Cost Center"})
-		doc.disabled = 0
-		doc.save()
 
 	if not frappe.db.get_value("Accounting Dimension Filter", {"accounting_dimension": "Department"}):
 		frappe.get_doc(
@@ -90,10 +88,6 @@ def create_accounting_dimension_filter():
 				"dimensions": [{"accounting_dimension": "Department", "dimension_value": "Accounts - _TC"}],
 			}
 		).insert()
-	else:
-		doc = frappe.get_doc("Accounting Dimension Filter", {"accounting_dimension": "Department"})
-		doc.disabled = 0
-		doc.save()
 
 
 def disable_dimension_filter():
